@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Esquema de la Base de Datos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
+    <style>
+        #tree {
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Estado de la Base de Datos</h1>
+    <div id="tree"></div>
+
+    <h2>Ejecutar Consulta SQL</h2>
+    <form action="{{ url_for('query') }}" method="post" target="_blank">
+        <textarea name="query" rows="4" cols="50" placeholder="Escribe tu consulta SQL aquí..."></textarea><br>
+        <input type="submit" value="Ejecutar Consulta">
+    </form>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
+    <script>
+        $(function() {
+            $.getJSON('{{ url_for("get_schema") }}', function(data) {
+                var treeData = [];
+                for (var table in data) {
+                    var node = {
+                        'text': table,
+                        'children': [],
+                        'icon': 'jstree-folder'
+                    };
+                    data[table].columns.forEach(function(col) {
+                        node.children.push({
+                            'text': col,
+                            'icon': 'jstree-file'
+                        });
+                    });
+                    data[table].foreign_keys.forEach(function(fk) {
+                        node.children.push({
+                            'text': 'FK to ' + fk,
+                            'icon': 'jstree-file'
+                        });
+                    });
+                    treeData.push(node);
+                }
+                $('#tree').jstree({
+                    'core': {
+                        'data': treeData
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
