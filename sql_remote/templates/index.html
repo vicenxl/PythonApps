@@ -1,57 +1,82 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Esquema de la Base de Datos</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Schema</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
     <style>
-        #tree {
+        #db-tree {
             margin: 20px;
         }
     </style>
 </head>
 <body>
-    <h1>Estado de la Base de Datos</h1>
-    <div id="tree"></div>
+    <h1>Database Schema</h1>
+    <div id="db-tree"></div>
 
-    <h2>Ejecutar Consulta SQL</h2>
-    <form action="{{ url_for('query') }}" method="post" target="_blank">
-        <textarea name="query" rows="4" cols="50" placeholder="Escribe tu consulta SQL aquí..."></textarea><br>
-        <input type="submit" value="Ejecutar Consulta">
+    <h2>Run SQL Query</h2>
+    <form id="queryForm">
+        <textarea id="queryInput" name="query" rows="4" cols="50" placeholder="Enter your SQL query here..."></textarea><br>
+        <input type="button" value="Run Query" onclick="runQuery()">
     </form>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
     <script>
-        $(function() {
-            $.getJSON('{{ url_for("get_schema") }}', function(data) {
-                var treeData = [];
-                for (var table in data) {
-                    var node = {
-                        'text': table,
-                        'children': [],
-                        'icon': 'jstree-folder'
-                    };
-                    data[table].columns.forEach(function(col) {
-                        node.children.push({
-                            'text': col,
-                            'icon': 'jstree-file'
+        $(document).ready(function() {
+            $.ajax({
+                url: '/api/schema',
+                dataType: 'json',
+                success: function(data) {
+                    var treeData = [];
+                    $.each(data, function(schema, details) {
+                        var schemaNode = {
+                            "text": schema,
+                            "children": []
+                        };
+                        details.columns.forEach(function(column) {
+                            schemaNode.children.push({
+                                "text": column
+                            });
                         });
-                    });
-                    data[table].foreign_keys.forEach(function(fk) {
-                        node.children.push({
-                            'text': 'FK to ' + fk,
-                            'icon': 'jstree-file'
+                        details.foreign_keys.forEach(function(foreignKey) {
+                            schemaNode.children.push({
+                                "text": "Foreign Key: " + foreignKey
+                            });
                         });
+                        treeData.push(schemaNode);
                     });
-                    treeData.push(node);
+
+                    $('#db-tree').jstree({
+                        'core': {
+                            'data': treeData
+                        }
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading schema:', status, error);
                 }
-                $('#tree').jstree({
-                    'core': {
-                        'data': treeData
-                    }
-                });
             });
         });
+
+        function runQuery() {
+            var query = document.getElementById('queryInput').value;
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ url_for('query') }}';
+            form.target = '_blank';
+
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'query';
+            input.value = query;
+            form.appendChild(input);
+
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+        }
     </script>
 </body>
 </html>

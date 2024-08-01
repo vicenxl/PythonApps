@@ -190,6 +190,7 @@ def get_schema():
         cur.close()
         conn.close()
 
+        # Devolver el esquema en formato JSON
         return jsonify(schema)
     
     except Exception as e:
